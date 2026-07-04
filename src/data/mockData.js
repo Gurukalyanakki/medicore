@@ -118,6 +118,6 @@ export const credentials = {
   'admin@medicore.com': { password: 'Admin@123', role: 'Administrator', name: 'Guru Kalyan' },
   'doctor@medicore.com': { password: 'Doctor@123', role: 'Doctor', name: 'Dr.Gurukalyan' },
   'reception@medicore.com': { password: 'Reception@123', role: 'Receptionist', name: 'A Venkat' },
-  'nurse@medicore.com': { password: 'Nurse@123', role: 'Nurse', name: 'Bhaveshi' },
+  'nurse@medicore.com': { password: 'Nurse@123', role: 'Nurse', name: 'Vishnu Priya' },
   'patient@medicore.com': { password: 'Patient@123', role: 'Patient', name: 'Vishal' },
 }
