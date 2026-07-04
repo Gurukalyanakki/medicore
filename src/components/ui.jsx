@@ -45,7 +45,7 @@ export function SearchInput({ value, onChange, placeholder = 'Search…', classN
 }
 
 export function Select({ value, onChange, children, label, ...props }) {
-  return <label className="select-wrap">{label && <span>{label}</span>}<select value={value} onChange={(event) => onChange(event.target.value)} {...props}>{children}</select><ChevronDown size={15} /></label>
+  return <label className="select-wrap">{label && <span>{label}</span>}<select value={value} onChange={(event) => onChange(event.target.value)} {...props}>{children}</select></label>
 }
 
 export function Field({ label, error, className = '', ...props }) {

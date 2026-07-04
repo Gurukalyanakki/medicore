@@ -12,6 +12,7 @@ import {
   Tooltip, XAxis, YAxis,
 } from 'recharts'
 import { Badge, Button, Card, PageHeader, Progress, StatCard, Field, Modal } from '../components/ui'
+import DnaHelix from '../components/DnaHelix'
 import { useApp } from '../context/AppContext'
 import { activitySeed, revenueData } from '../data/mockData'
 
@@ -59,7 +60,7 @@ function AdminDashboard() {
     <div className="page dashboard-page">
       <PageHeader
         eyebrow="Friday, July 3 · 08:42 AM"
-        title={`Good morning, ${firstName}.`}
+        title={<span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>Good morning, {firstName}. <Activity className="priority-critical" style={{ color: 'var(--primary)' }} /></span>}
         description="Here’s what’s happening across St. Helena Campus today."
         actions={
           <>
@@ -215,7 +216,7 @@ function DoctorDashboard() {
     <div className="page dashboard-page">
       <PageHeader
         eyebrow="Clinical Workspace"
-        title={`Good morning, ${session?.name}.`}
+        title={<span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>Good morning, {session?.name}. <HeartPulse className="priority-critical" style={{ color: 'var(--teal)' }} /></span>}
         description="Here are your clinical activities, schedules, and active patient listings."
         actions={
           <>
@@ -287,6 +288,13 @@ function DoctorDashboard() {
             {!myInpatients.length && (
               <p style={{ textAlign: 'center', color: 'var(--muted)', fontSize: '11px', paddingTop: '15px' }}>No active admitted patients.</p>
             )}
+            <div style={{ marginTop: '18px', paddingTop: '15px', borderTop: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ fontSize: '9px', fontWeight: '800', color: 'var(--muted)', letterSpacing: '0.07em', textTransform: 'uppercase' }}>GENETIC DIAGNOSTICS ACTIVE</span>
+                <span className="badge-danger" style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--primary)' }} />
+              </div>
+              <DnaHelix strandsCount={15} />
+            </div>
           </div>
         </Card>
       </section>
@@ -381,7 +389,7 @@ function NurseDashboard() {
     <div className="page dashboard-page">
       <PageHeader
         eyebrow="Care Operations & Ward Logistics"
-        title={`Good morning, ${session?.name}.`}
+        title={<span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>Good morning, {session?.name}. <Activity className="priority-critical" style={{ color: 'var(--primary)' }} /></span>}
         description={`Active duty: ${nurseWard} Ward · Clinical & Triage tracking Dashboard.`}
         actions={
           <Button variant="ghost" icon={Wrench} onClick={() => setBedUpdateOpen(true)}>Update Bed Readiness</Button>
@@ -514,7 +522,7 @@ function ReceptionistDashboard() {
     <div className="page dashboard-page">
       <PageHeader
         eyebrow="Front Office Operations"
-        title="Good morning, VENKAT."
+        title={<span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>Good morning, {session?.name?.replace(/^Dr\.\s*/, '').split(' ')[0]}. <Activity className="priority-critical" style={{ color: 'var(--primary)' }} /></span>}
         description="Patient intake, scheduled check-ins, and invoice settlement dashboard."
         actions={
           <>
@@ -688,7 +696,7 @@ function PatientDashboard() {
     <div className="page dashboard-page">
       <PageHeader
         eyebrow="My Personal Health Portal"
-        title={`Good morning, ${session?.name?.split(' ')[0]}.`}
+        title={<span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>Good morning, {session?.name?.split(' ')[0]}. <HeartPulse className="priority-critical" style={{ color: 'var(--primary)' }} /></span>}
         description="View your diagnostics, scheduled visits, billing receipts, and care summaries."
         actions={
           <>
@@ -725,6 +733,13 @@ function PatientDashboard() {
               <div><span style={{ color: 'var(--muted)', fontSize: '11px' }}>Known Allergies</span><br /><b style={{ fontSize: '13px' }}>{patientRecord?.allergies}</b></div>
               <div><span style={{ color: 'var(--muted)', fontSize: '11px' }}>Emergency Contact</span><br /><b style={{ fontSize: '13px' }}>{patientRecord?.emergency}</b></div>
               <div><span style={{ color: 'var(--muted)', fontSize: '11px' }}>Insurance Provider</span><br /><b style={{ fontSize: '13px' }}>{patientRecord?.insurance}</b></div>
+            </div>
+            <div style={{ marginTop: '22px', paddingTop: '15px', borderTop: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ fontSize: '9px', fontWeight: '800', color: 'var(--muted)', letterSpacing: '0.07em', textTransform: 'uppercase' }}>GENOMIC DIAGNOSTICS LINK</span>
+                <span className="badge-danger" style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--primary)' }} />
+              </div>
+              <DnaHelix strandsCount={15} />
             </div>
           </Card>
 
