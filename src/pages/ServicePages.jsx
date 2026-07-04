@@ -5,7 +5,7 @@ import {
   HeartPulse, MapPin, Package, Plus, SearchX, ShoppingCart, Siren, TestTube2,
   TrendingUp, Truck, UserRound, XCircle,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
   Badge, Button, Card, EmptyState, Modal, PageHeader, Progress, SearchInput,
   Select, Tabs, Field,
@@ -19,40 +19,65 @@ const statusTone = (status) => ({
 }[status] || 'neutral')
 
 export function AppointmentsPage() {
-  const { doctors, appointments, addAppointment } = useApp()
+  const { doctors, appointments, addAppointment, checkInAppointment, session } = useApp()
   const [selectedDay, setSelectedDay] = useState(3)
   const [query, setQuery] = useState('')
   const [adding, setAdding] = useState(false)
-  const [form, setForm] = useState({ patient: '', date: '2026-07-03', time: '16:30', doctor: doctors[0]?.name || '' })
+  const [form, setForm] = useState(() => ({
+    patient: session?.role === 'Patient' ? session.name : '',
+    date: '2026-07-03',
+    time: '16:30',
+    doctor: doctors[0]?.name || ''
+  }))
 
   const days = [29, 30, 1, 2, 3, 4, 5]
   const week = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-  const filtered = appointments.filter((item) => `${item.patient} ${item.doctor} ${item.type}`.toLowerCase().includes(query.toLowerCase()))
+
+  const filtered = useMemo(() => {
+    return appointments.filter((item) => {
+      const matchesQuery = `${item.patient} ${item.doctor} ${item.type}`.toLowerCase().includes(query.toLowerCase())
+      if (!matchesQuery) return false
+
+      if (session?.role === 'Patient') {
+        return item.patient.toLowerCase() === session.name.toLowerCase()
+      }
+      if (session?.role === 'Doctor') {
+        return item.doctor.toLowerCase().includes(session.name.toLowerCase())
+      }
+      return true
+    })
+  }, [appointments, query, session])
 
   const save = (event) => {
     event.preventDefault()
     addAppointment({ ...form, type: 'Consultation' })
     setAdding(false)
-    setForm({ patient: '', date: '2026-07-03', time: '16:30', doctor: doctors[0]?.name || '' })
+    setForm({ patient: session?.role === 'Patient' ? session.name : '', date: '2026-07-03', time: '16:30', doctor: doctors[0]?.name || '' })
   }
 
   return <div className="page"><PageHeader eyebrow="Care coordination" title="Appointments" description="A clear daily rhythm for patients, clinicians, and care teams." actions={<Button icon={Plus} onClick={() => setAdding(true)}>New appointment</Button>} />
-    <Card className="calendar-strip"><div className="calendar-month"><button aria-label="Previous month"><ChevronLeft /></button><div><span>July 2026</span><small>This week</small></div><button aria-label="Next month"><ChevronRight /></button></div><div className="calendar-days">{days.map((day, index) => <button className={selectedDay === day ? 'active' : ''} key={`${day}-${index}`} onClick={() => setSelectedDay(day)}><span>{week[index]}</span><b>{day}</b>{day === 3 && <i />}</button>)}</div><div className="calendar-summary"><b>{appointments.length}</b><span>Appointments<br />this week</span></div></Card>
-    <div className="appointments-layout"><Card className="schedule-card"><div className="card-heading"><div><span>Friday, July 3</span><h2>Today’s schedule</h2></div><SearchInput value={query} onChange={setQuery} placeholder="Search schedule…" /></div><div className="appointment-list">{filtered.map((item, index) => <motion.div key={item.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * .05 }}><span className="appointment-time">{item.time}</span><i className="appointment-line" style={{ background: item.color }} /><div className="appointment-main"><span className="appointment-icon" style={{ background: `${item.color}18`, color: item.color }}><UserRound /></span><div><h3>{item.patient}</h3><p>{item.type} · {item.doctor}</p></div></div><Badge tone={statusTone(item.status)} dot>{item.status}</Badge><button className="icon-btn" aria-label="View appointment details"><ChevronRight /></button></motion.div>)}</div></Card>
-      <div className="availability-column"><Card><div className="card-heading"><div><span>Clinical team</span><h2>Doctor availability</h2></div><Badge tone="success">Live</Badge></div><div className="availability-list">{doctors.slice(0, 5).map((doctor) => <div key={doctor.id}><span style={{ background: doctor.color }}>{doctor.name.split(' ').slice(-1)[0][0]}</span><div><b>{doctor.name}</b><small>{doctor.specialty}</small></div><Badge tone={statusTone(doctor.status)} dot>{doctor.status}</Badge></div>)}</div></Card><Card className="next-slot"><span><Clock3 /></span><div><small>Next open slot</small><b>Today at 16:30</b><p>Dr. Sai Kiran · Emergency Medicine</p></div><Button variant="ghost" onClick={() => addAppointment({ patient: 'Walk-in Patient', date: '2026-07-03', time: '16:30', doctor: 'Dr. Sai Kiran', type: 'Emergency' })}>Reserve</Button></Card></div>
+    <Card className="calendar-strip"><div className="calendar-month"><button aria-label="Previous month"><ChevronLeft /></button><div><span>July 2026</span><small>This week</small></div><button aria-label="Next month"><ChevronRight /></button></div><div className="calendar-days">{days.map((day, index) => <button className={selectedDay === day ? 'active' : ''} key={`${day}-${index}`} onClick={() => setSelectedDay(day)}><span>{week[index]}</span><b>{day}</b>{day === 3 && <i />}</button>)}</div><div className="calendar-summary"><b>{filtered.length}</b><span>Appointments<br />this week</span></div></Card>
+    <div className="appointments-layout"><Card className="schedule-card"><div className="card-heading"><div><span>Friday, July 3</span><h2>Today’s schedule</h2></div><SearchInput value={query} onChange={setQuery} placeholder="Search schedule…" /></div><div className="appointment-list">{filtered.map((item, index) => <motion.div key={item.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * .05 }}><span className="appointment-time">{item.time}</span><i className="appointment-line" style={{ background: item.color }} /><div className="appointment-main"><span className="appointment-icon" style={{ background: `${item.color}18`, color: item.color }}><UserRound /></span><div><h3>{item.patient}</h3><p>{item.type} · {item.doctor}</p></div></div><Badge tone={statusTone(item.status)} dot>{item.status}</Badge>{['Receptionist', 'Administrator'].includes(session?.role) && (item.status === 'Confirmed' || item.status === 'Pending') && <Button variant="ghost" size="sm" onClick={() => checkInAppointment(item.id)} style={{ marginLeft: '10px' }}>Check In</Button>}<button className="icon-btn" aria-label="View appointment details"><ChevronRight /></button></motion.div>)}</div></Card>
+      {session?.role !== 'Patient' && <div className="availability-column"><Card><div className="card-heading"><div><span>Clinical team</span><h2>Doctor availability</h2></div><Badge tone="success">Live</Badge></div><div className="availability-list">{doctors.slice(0, 5).map((doctor) => <div key={doctor.id}><span style={{ background: doctor.color }}>{doctor.name.split(' ').slice(-1)[0][0]}</span><div><b>{doctor.name}</b><small>{doctor.specialty}</small></div><Badge tone={statusTone(doctor.status)} dot>{doctor.status}</Badge></div>)}</div></Card><Card className="next-slot"><span><Clock3 /></span><div><small>Next open slot</small><b>Today at 16:30</b><p>Dr. Sai Kiran · Emergency Medicine</p></div><Button variant="ghost" onClick={() => addAppointment({ patient: 'Walk-in Patient', date: '2026-07-03', time: '16:30', doctor: 'Dr. Sai Kiran', type: 'Emergency' })}>Reserve</Button></Card></div>}
     </div>
-    <Modal open={adding} onClose={() => setAdding(false)} title="New appointment" subtitle="Schedule a patient with an available clinician."><form className="form-grid" onSubmit={save}><Field label="Patient name" required placeholder="Enter patient name" value={form.patient} onChange={(e) => setForm({ ...form, patient: e.target.value })} /><Field label="Date" required type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} /><Field label="Time" required type="time" value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} /><label className="field"><span>Doctor</span><select value={form.doctor} onChange={(e) => setForm({ ...form, doctor: e.target.value })}>{doctors.map((doctor) => <option key={doctor.id}>{doctor.name} · {doctor.specialty}</option>)}</select></label><div className="modal-actions field-wide"><Button type="button" variant="ghost" onClick={() => setAdding(false)}>Cancel</Button><Button type="submit">Schedule appointment</Button></div></form></Modal>
+    <Modal open={adding} onClose={() => setAdding(false)} title="New appointment" subtitle="Schedule a patient with an available clinician."><form className="form-grid" onSubmit={save}><Field label="Patient name" required placeholder="Enter patient name" value={form.patient} onChange={(e) => setForm({ ...form, patient: e.target.value })} disabled={session?.role === 'Patient'} /><Field label="Date" required type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} /><Field label="Time" required type="time" value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} /><label className="field"><span>Doctor</span><select value={form.doctor} onChange={(e) => setForm({ ...form, doctor: e.target.value })}>{doctors.map((doctor) => <option key={doctor.id}>{doctor.name} · {doctor.specialty}</option>)}</select></label><div className="modal-actions field-wide"><Button type="button" variant="ghost" onClick={() => setAdding(false)}>Cancel</Button><Button type="submit">Schedule appointment</Button></div></form></Modal>
   </div>
 }
 
 export function LabsPage() {
-  const { labs, addLabOrder } = useApp()
+  const { labs, addLabOrder, session } = useApp()
   const [tab, setTab] = useState('All reports')
   const [selected, setSelected] = useState(null)
   const [adding, setAdding] = useState(false)
   const [form, setForm] = useState({ patient: '', test: 'Complete blood count', technician: 'Sri Lekha', progress: 10 })
 
-  const filtered = tab === 'All reports' ? labs : labs.filter((item) => item.status === tab)
+  const filtered = useMemo(() => {
+    let list = tab === 'All reports' ? labs : labs.filter((item) => item.status === tab)
+    if (session?.role === 'Patient') {
+      list = list.filter(item => item.patient.toLowerCase() === session.name.toLowerCase())
+    }
+    return list
+  }, [labs, tab, session])
 
   const save = (event) => {
     event.preventDefault()
@@ -61,7 +86,9 @@ export function LabsPage() {
     setForm({ patient: '', test: 'Complete blood count', technician: 'Fatima Ali', progress: 10 })
   }
 
-  return <div className="page"><PageHeader eyebrow="Diagnostics" title="Lab reports" description="Track every diagnostic order from collection to verified result." actions={<Button icon={Plus} onClick={() => setAdding(true)}>New lab order</Button>} />
+  const showActions = session?.role !== 'Patient'
+
+  return <div className="page"><PageHeader eyebrow="Diagnostics" title="Lab reports" description="Track every diagnostic order from collection to verified result." actions={showActions ? <Button icon={Plus} onClick={() => setAdding(true)}>New lab order</Button> : null} />
     <section className="mini-stats"><div><span className="mini-icon purple"><TestTube2 /></span><b>{labs.length}<small>Orders today</small></b><em>8 STAT priority</em></div><div><span className="mini-icon blue"><FlaskConical /></span><b>{labs.filter(i => i.status !== 'Completed').length}<small>In progress</small></b><em>Median 46 min</em></div><div><span className="mini-icon teal"><CheckCircle2 /></span><b>{labs.filter(i => i.status === 'Completed').length}<small>Completed</small></b><em>98% within SLA</em></div></section>
     <Card className="table-card"><div className="table-toolbar"><Tabs items={['All reports', 'Pending', 'Sample collected', 'Processing', 'Completed']} value={tab} onChange={setTab} /></div><div className="data-table-wrap"><table className="data-table"><thead><tr><th>Report</th><th>Patient</th><th>Test</th><th>Progress</th><th>Technician</th><th>Status</th><th /></tr></thead><tbody>{filtered.map((report) => <tr key={report.id} onClick={() => setSelected(report)}><td><b>{report.id}</b><small>{report.ordered}</small></td><td><div className="person-cell"><span className="table-icon"><FlaskConical /></span><span><b>{report.patient}</b><small>Routine diagnostics</small></span></div></td><td>{report.test}</td><td><div className="lab-progress"><Progress value={report.progress} color={report.progress === 100 ? '#10b981' : '#7c3aed'} /><b>{report.progress}%</b></div></td><td>{report.technician}</td><td><Badge tone={statusTone(report.status)} dot>{report.status}</Badge></td><td><button className="icon-btn" aria-label="View lab report details"><ChevronRight /></button></td></tr>)}</tbody></table></div></Card>
     
@@ -120,13 +147,20 @@ export function PharmacyPage() {
 }
 
 export function BillingPage() {
-  const { invoices, createInvoice } = useApp()
+  const { invoices, createInvoice, payInvoice, session } = useApp()
   const [tab, setTab] = useState('All invoices')
   const [selected, setSelected] = useState(null)
   const [adding, setAdding] = useState(false)
+  const [paymentOpen, setPaymentOpen] = useState(false)
   const [form, setForm] = useState({ patient: '', service: 'General consultation', amount: 150, status: 'Pending' })
 
-  const filtered = tab === 'All invoices' ? invoices : invoices.filter((item) => item.status === tab)
+  const filtered = useMemo(() => {
+    let list = tab === 'All invoices' ? invoices : invoices.filter((item) => item.status === tab)
+    if (session?.role === 'Patient') {
+      list = list.filter(item => item.patient.toLowerCase() === session.name.toLowerCase())
+    }
+    return list
+  }, [invoices, tab, session])
 
   const save = (event) => {
     event.preventDefault()
@@ -135,11 +169,29 @@ export function BillingPage() {
     setForm({ patient: '', service: 'General consultation', amount: 150, status: 'Pending' })
   }
 
-  return <div className="page"><PageHeader eyebrow="Revenue cycle" title="Billing & payments" description="A transparent view of invoices, insurance, and collected revenue." actions={<Button icon={Plus} onClick={() => setAdding(true)}>Create invoice</Button>} />
+  const handlePayment = () => {
+    payInvoice(selected.id)
+    setPaymentOpen(false)
+    setSelected(null)
+  }
+
+  const showActions = session?.role !== 'Patient'
+
+  return <div className="page"><PageHeader eyebrow="Revenue cycle" title="Billing & payments" description="A transparent view of invoices, insurance, and collected revenue." actions={showActions ? <Button icon={Plus} onClick={() => setAdding(true)}>Create invoice</Button> : null} />
     <section className="stat-grid billing-stats"><Card className="billing-kpi"><span className="mini-icon green"><DollarSign /></span><div><small>Collected this month</small><strong>$428.6K</strong><em><TrendingUp /> +11.8%</em></div></Card><Card className="billing-kpi"><span className="mini-icon blue"><CreditCard /></span><div><small>Outstanding</small><strong>$84.2K</strong><em>{invoices.filter(i => i.status !== 'Paid').length} invoices</em></div></Card><Card className="billing-kpi"><span className="mini-icon purple"><FileText /></span><div><small>Insurance claims</small><strong>$126.8K</strong><em>{invoices.filter(i => i.status === 'Insurance review').length} in review</em></div></Card></section>
-    <Card className="table-card"><div className="table-toolbar"><Tabs items={['All invoices', 'Paid', 'Pending', 'Insurance review']} value={tab} onChange={setTab} /><Button variant="ghost" icon={Download}>Export</Button></div><div className="data-table-wrap"><table className="data-table"><thead><tr><th>Invoice</th><th>Patient</th><th>Service</th><th>Date</th><th>Amount</th><th>Status</th><th /></tr></thead><tbody>{filtered.map((invoice) => <tr key={invoice.id}><td><b>{invoice.id}</b></td><td>{invoice.patient}</td><td>{invoice.service}</td><td>{invoice.date}</td><td><b>${invoice.amount.toLocaleString()}</b></td><td><Badge tone={statusTone(invoice.status)} dot>{invoice.status}</Badge></td><td><Button variant="ghost" onClick={() => setSelected(invoice)}>View</Button></td></tr>)}</tbody></table></div></Card>
+    <Card className="table-card"><div className="table-toolbar"><Tabs items={['All invoices', 'Paid', 'Pending', 'Insurance review']} value={tab} onChange={setTab} /><Button variant="ghost" icon={Download}>Export</Button></div><div className="data-table-wrap"><table className="data-table"><thead><tr><th>Invoice</th><th>Patient</th><th>Service</th><th>Date</th><th>Amount</th><th>Status</th><th /></tr></thead><tbody>{filtered.map((invoice) => <tr key={invoice.id}><td><b>{invoice.id}</b></td><td>{invoice.patient}</td><td>{invoice.service}</td><td>{invoice.date}</td><td><b>${invoice.amount.toLocaleString()}</b></td><td><Badge tone={statusTone(invoice.status)} dot>{invoice.status}</Badge></td><td>
+      <div style={{ display: 'flex', gap: '8px' }}>
+        <Button variant="ghost" onClick={() => setSelected(invoice)}>View</Button>
+        {session?.role === 'Patient' && invoice.status !== 'Paid' && (
+          <Button onClick={() => { setSelected(invoice); setPaymentOpen(true) }}>Pay Now</Button>
+        )}
+        {['Receptionist', 'Administrator'].includes(session?.role) && invoice.status !== 'Paid' && (
+          <Button variant="soft-success" onClick={() => payInvoice(invoice.id)}>Record Pay</Button>
+        )}
+      </div>
+    </td></tr>)}</tbody></table></div></Card>
     
-    <Modal open={Boolean(selected)} onClose={() => setSelected(null)} title={selected?.id || 'Invoice'} subtitle={`${selected?.patient} · ${selected?.date}`}><div className="invoice-total"><small>Amount due</small><strong>${selected?.amount.toLocaleString()}</strong><Badge tone={statusTone(selected?.status)}>{selected?.status}</Badge></div><div className="invoice-lines"><div><span>{selected?.service}</span><b>${selected?.amount.toLocaleString()}</b></div><div><span>Tax and adjustments</span><b>$0</b></div></div><Button icon={Download}>Download invoice</Button></Modal>
+    <Modal open={Boolean(selected) && !paymentOpen} onClose={() => setSelected(null)} title={selected?.id || 'Invoice'} subtitle={`${selected?.patient} · ${selected?.date}`}><div className="invoice-total"><small>Amount due</small><strong>${selected?.amount.toLocaleString()}</strong><Badge tone={statusTone(selected?.status)}>{selected?.status}</Badge></div><div className="invoice-lines"><div><span>{selected?.service}</span><b>${selected?.amount.toLocaleString()}</b></div><div><span>Tax and adjustments</span><b>$0</b></div></div><Button icon={Download}>Download invoice</Button></Modal>
 
     <Modal open={adding} onClose={() => setAdding(false)} title="Create invoice" subtitle="Generate a new billing invoice for a patient.">
       <form onSubmit={save} className="form-grid">
@@ -149,6 +201,24 @@ export function BillingPage() {
         <label className="field"><span>Status</span><select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}><option>Pending</option><option>Paid</option><option>Insurance review</option></select></label>
         <div className="modal-actions field-wide"><Button type="button" variant="ghost" onClick={() => setAdding(false)}>Cancel</Button><Button type="submit">Create invoice</Button></div>
       </form>
+    </Modal>
+
+    <Modal open={paymentOpen} onClose={() => { setPaymentOpen(false); setSelected(null); }} title="Secure Patient Billing Checkout" subtitle={`Invoice ID: ${selected?.id || ''}`}>
+      <div style={{ marginBottom: '20px', padding: '16px', background: 'var(--surface-soft)', borderRadius: '10px' }}>
+        <span style={{ fontSize: '11px', color: 'var(--muted)' }}>Outstanding Charge</span>
+        <h2 style={{ fontSize: '24px', margin: '4px 0' }}>${selected?.amount.toLocaleString()}</h2>
+        <span style={{ fontSize: '11px', color: 'var(--text-soft)' }}>Service: {selected?.service}</span>
+      </div>
+      <div className="form-grid">
+        <Field label="Cardholder Name" defaultValue={session?.name} required className="field-wide" />
+        <Field label="Credit Card Number" placeholder="4111 2222 3333 4444" required className="field-wide" />
+        <Field label="Expiry (MM/YY)" placeholder="12/28" required />
+        <Field label="CVV" placeholder="382" type="password" maxLength="3" required />
+        <div className="modal-actions field-wide">
+          <Button type="button" variant="ghost" onClick={() => { setPaymentOpen(false); setSelected(null); }}>Cancel</Button>
+          <Button onClick={handlePayment}>Confirm and Pay Now</Button>
+        </div>
+      </div>
     </Modal>
   </div>
 }

@@ -65,17 +65,111 @@ export default function AppShell() {
     return () => window.removeEventListener('keydown', shortcut)
   }, [])
 
+  const filteredNavGroups = useMemo(() => {
+    const role = session?.role || 'Administrator'
+    if (role === 'Administrator') {
+      return navGroups
+    }
+    if (role === 'Doctor') {
+      return [
+        { label: 'Overview', items: [
+          { to: '/app/dashboard', label: 'Doctor Hub', icon: LayoutDashboard },
+          { to: '/app/appointments', label: 'My Consultations', icon: CalendarDays },
+        ]},
+        { label: 'Care delivery', items: [
+          { to: '/app/patients', label: 'Patients', icon: UserRound },
+          { to: '/app/admissions', label: 'Admissions', icon: ClipboardList },
+        ]},
+        { label: 'Operations', items: [
+          { to: '/app/beds', label: 'Bed occupancy', icon: BedDouble },
+          { to: '/app/labs', label: 'Lab reports', icon: FlaskConical },
+          { to: '/app/pharmacy', label: 'Pharmacy', icon: Package },
+        ]},
+        { label: 'Intelligence', items: [
+          { to: '/app/settings', label: 'Settings', icon: Settings },
+        ]},
+      ]
+    }
+    if (role === 'Nurse') {
+      return [
+        { label: 'Overview', items: [
+          { to: '/app/dashboard', label: 'Nurse Hub', icon: LayoutDashboard },
+          { to: '/app/emergency', label: 'ER Triage', icon: Ambulance, badge: '4' },
+        ]},
+        { label: 'Care delivery', items: [
+          { to: '/app/patients', label: 'Patients', icon: UserRound },
+          { to: '/app/admissions', label: 'Admissions', icon: ClipboardList },
+        ]},
+        { label: 'Operations', items: [
+          { to: '/app/wards', label: 'Ward management', icon: Building2 },
+          { to: '/app/beds', label: 'Bed occupancy', icon: BedDouble },
+          { to: '/app/labs', label: 'Lab reports', icon: FlaskConical },
+          { to: '/app/pharmacy', label: 'Pharmacy', icon: Package },
+        ]},
+        { label: 'Intelligence', items: [
+          { to: '/app/settings', label: 'Settings', icon: Settings },
+        ]},
+      ]
+    }
+    if (role === 'Receptionist') {
+      return [
+        { label: 'Overview', items: [
+          { to: '/app/dashboard', label: 'Front Office', icon: LayoutDashboard },
+          { to: '/app/appointments', label: 'Appointments', icon: CalendarDays },
+          { to: '/app/emergency', label: 'Emergency', icon: Ambulance, badge: '4' },
+        ]},
+        { label: 'Care delivery', items: [
+          { to: '/app/patients', label: 'Patients', icon: UserRound },
+        ]},
+        { label: 'Operations', items: [
+          { to: '/app/beds', label: 'Bed occupancy', icon: BedDouble },
+          { to: '/app/billing', label: 'Billing & Invoices', icon: CreditCard },
+        ]},
+        { label: 'Intelligence', items: [
+          { to: '/app/settings', label: 'Settings', icon: Settings },
+        ]},
+      ]
+    }
+    if (role === 'Patient') {
+      return [
+        { label: 'My Health Portal', items: [
+          { to: '/app/dashboard', label: 'My Dashboard', icon: LayoutDashboard },
+          { to: '/app/appointments', label: 'My Visits', icon: CalendarDays },
+          { to: '/app/labs', label: 'My Lab Reports', icon: FlaskConical },
+          { to: '/app/billing', label: 'My Invoices', icon: CreditCard },
+        ]},
+        { label: 'Support', items: [
+          { to: '/app/settings', label: 'My Settings', icon: Settings },
+        ]},
+      ]
+    }
+    return []
+  }, [session])
+
   const results = useMemo(() => {
     if (query.trim().length < 2) return []
     const q = query.toLowerCase()
-    return [
-      ...patients.map((item) => ({ type: 'Patient', label: item.name, meta: `${item.id} · ${item.diagnosis}`, path: '/app/patients' })),
-      ...doctors.map((item) => ({ type: 'Doctor', label: item.name, meta: item.specialty, path: '/app/doctors' })),
-      ...staff.map((item) => ({ type: 'Staff', label: item.name, meta: item.role, path: '/app/staff' })),
-      ...medicines.map((item) => ({ type: 'Medicine', label: item.name, meta: `${item.stock} in stock`, path: '/app/pharmacy' })),
-      ...admissions.filter((item) => item.status === 'Admitted').map((item) => ({ type: 'Admission', label: item.patientName, meta: `${item.ward} · ${item.bedId}`, path: '/app/admissions' })),
-    ].filter((item) => `${item.label} ${item.meta}`.toLowerCase().includes(q)).slice(0, 8)
-  }, [query, patients, doctors, staff, medicines, admissions])
+    const role = session?.role || 'Administrator'
+    
+    let list = []
+    if (role === 'Patient') {
+      list = [
+        ...patients.filter(p => p.name === session.name).map((item) => ({ type: 'My Profile', label: item.name, meta: `${item.id} · ${item.diagnosis}`, path: '/app/dashboard' })),
+        { type: 'Billing', label: 'My Invoices', meta: 'Outstanding & paid receipts', path: '/app/billing' },
+        { type: 'Labs', label: 'My Lab Reports', meta: 'Check laboratory results', path: '/app/labs' },
+      ]
+    } else {
+      list = [
+        ...patients.map((item) => ({ type: 'Patient', label: item.name, meta: `${item.id} · ${item.diagnosis}`, path: '/app/patients' })),
+        ...doctors.map((item) => ({ type: 'Doctor', label: item.name, meta: item.specialty, path: '/app/doctors' })),
+        ...staff.map((item) => ({ type: 'Staff', label: item.name, meta: item.role, path: '/app/staff' })),
+        ...medicines.map((item) => ({ type: 'Medicine', label: item.name, meta: `${item.stock} in stock`, path: '/app/pharmacy' })),
+        ...admissions.filter((item) => item.status === 'Admitted').map((item) => ({ type: 'Admission', label: item.patientName, meta: `${item.ward} · ${item.bedId}`, path: '/app/admissions' })),
+      ]
+    }
+    
+    return list.filter((item) => `${item.label} ${item.meta}`.toLowerCase().includes(q)).slice(0, 8)
+  }, [query, patients, doctors, staff, medicines, admissions, session])
 
   const dismissToast = (id) => setToasts((items) => items.filter((item) => item.id !== id))
 
@@ -89,7 +183,7 @@ export default function AppShell() {
         </div>
         <button className="sidebar-search" onClick={() => setSearchOpen(true)}><Search size={17} /><span>Search anything</span><kbd>⌘ K</kbd></button>
         <nav>
-          {navGroups.map((group) => <div className="nav-group" key={group.label}><p>{group.label}</p>{group.items.map((item) => <NavLink key={item.to} to={item.to} className={({ isActive }) => isActive ? 'active' : ''}><item.icon size={19} /><span>{item.label}</span>{item.badge && <b>{item.badge}</b>}</NavLink>)}</div>)}
+          {filteredNavGroups.map((group) => <div className="nav-group" key={group.label}><p>{group.label}</p>{group.items.map((item) => <NavLink key={item.to} to={item.to} className={({ isActive }) => isActive ? 'active' : ''}><item.icon size={19} /><span>{item.label}</span>{item.badge && <b>{item.badge}</b>}</NavLink>)}</div>)}
         </nav>
         <div className="sidebar-bottom">
           <div className="system-status"><i /><div><b>All systems operational</b><span>Updated 2 min ago</span></div></div>
@@ -102,7 +196,13 @@ export default function AppShell() {
           <button className="icon-btn menu-button" onClick={() => setMobileOpen(true)}><Menu size={21} /></button>
           <div className="topbar-context"><span>St. Helena Campus</span><b>Clinical Operations</b></div>
           <div className="topbar-actions">
-            <button className="quick-button" onClick={() => navigate('/app/admissions')}><span>+</span> Quick action</button>
+            <button className="quick-button" onClick={() => {
+              if (session?.role === 'Patient') navigate('/app/appointments')
+              else if (session?.role === 'Doctor') navigate('/app/patients')
+              else if (session?.role === 'Nurse') navigate('/app/beds')
+              else if (session?.role === 'Receptionist') navigate('/app/appointments')
+              else navigate('/app/admissions')
+            }}><span>+</span> {session?.role === 'Patient' ? 'My Visits' : session?.role === 'Doctor' ? 'Patients' : session?.role === 'Nurse' ? 'Bed Map' : 'Quick Action'}</button>
             <button className="icon-btn" aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`} onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>{theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}</button>
             <div className="popover-wrap">
               <button className="icon-btn notification-button" aria-label="Notifications" onClick={() => setNotificationsOpen(!notificationsOpen)}><Bell size={18} /><i /></button>

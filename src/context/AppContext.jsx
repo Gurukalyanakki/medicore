@@ -233,6 +233,36 @@ export function AppProvider({ children }) {
     toast('Inventory updated')
   }
 
+  const payInvoice = (id) => {
+    setState((current) => ({
+      ...current,
+      invoices: current.invoices.map((item) => item.id === id ? { ...item, status: 'Paid' } : item)
+    }))
+    toast(`Invoice ${id} paid successfully`)
+  }
+
+  const checkInAppointment = (id) => {
+    setState((current) => ({
+      ...current,
+      appointments: current.appointments.map((item) => item.id === id ? { ...item, status: 'Checked in' } : item)
+    }))
+    toast(`Patient checked in`)
+  }
+
+  const prescribeMedication = (medicineId, patientName, instructions) => {
+    const med = state.medicines.find((m) => m.id === medicineId)
+    if (!med || med.stock < 1) {
+      toast('Medication out of stock or unavailable', 'danger')
+      return false
+    }
+    setState((current) => ({
+      ...current,
+      medicines: current.medicines.map((m) => m.id === medicineId ? { ...m, stock: m.stock - 1 } : m)
+    }))
+    toast(`Prescribed ${med.name} to ${patientName}`)
+    return true
+  }
+
   const saveSettings = (section, values) => {
     setState((current) => ({ ...current, [section]: { ...current[section], ...values } }))
     toast('Settings saved')
@@ -248,7 +278,7 @@ export function AppProvider({ children }) {
     addPatient, updatePatient, deletePatient, admitPatient, dischargePatient,
     transferPatient, updateBedStatus, updateMedicine, saveSettings, resetDemo,
     addDoctor, addNurse, addStaff, addAppointment, addLabOrder, addMedicine,
-    createInvoice, registerEmergency,
+    createInvoice, registerEmergency, payInvoice, checkInAppointment, prescribeMedication,
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
