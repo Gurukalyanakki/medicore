@@ -514,7 +514,7 @@ function ReceptionistDashboard() {
     <div className="page dashboard-page">
       <PageHeader
         eyebrow="Front Office Operations"
-        title="Good morning, Anitha."
+        title="Good morning, VENKAT."
         description="Patient intake, scheduled check-ins, and invoice settlement dashboard."
         actions={
           <>

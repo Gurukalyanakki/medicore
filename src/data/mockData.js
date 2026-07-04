@@ -115,9 +115,9 @@ export const activitySeed = [
 ]
 
 export const credentials = {
-  'admin@medicore.com': { password: 'Admin@123', role: 'Administrator', name: 'Raju Garu' },
-  'doctor@medicore.com': { password: 'Doctor@123', role: 'Doctor', name: 'Dr. Srinivasa Rao' },
-  'reception@medicore.com': { password: 'Reception@123', role: 'Receptionist', name: 'Anitha Reddy' },
-  'nurse@medicore.com': { password: 'Nurse@123', role: 'Nurse', name: 'Kalyani Lakshmi' },
-  'patient@medicore.com': { password: 'Patient@123', role: 'Patient', name: 'Priya Deepika' },
+  'admin@medicore.com': { password: 'Admin@123', role: 'Administrator', name: 'Guru Kalyan' },
+  'doctor@medicore.com': { password: 'Doctor@123', role: 'Doctor', name: 'Dr.Gurukalyan' },
+  'reception@medicore.com': { password: 'Reception@123', role: 'Receptionist', name: 'A Venkat' },
+  'nurse@medicore.com': { password: 'Nurse@123', role: 'Nurse', name: 'Bhaveshi' },
+  'patient@medicore.com': { password: 'Patient@123', role: 'Patient', name: 'Vishal' },
 }
